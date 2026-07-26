@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F5EFE3">
+<title>FlowSense — Tracker Menstruasi & Kesuburan</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<style>
+:root{
+  --bg:#F5EFE3;
+  --surface:#FAF5EA;
+  --card:#FFFDF8;
+  --card-hi:#FFFFFF;
+  --line:#E6DBC5;
+  --text:#3E362C;
+  --text-dim:#8C7F6B;
+  --text-faint:#B3A78F;
+  --text-onaccent:#FFFBF4;
+  --menstrual:#C4685A;
+  --follicular:#7E9C74;
+  --ovulation:#CE9A3E;
+  --luteal:#8E7AA8;
+  --radius:20px;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-t: env(safe-area-inset-top, 0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;height:100%;}
+body{
+  background:radial-gradient(120% 100% at 50% 0%, #FBF6EA 0%, var(--bg) 65%);
+  color:var(--text);
+  font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+.serif{font-family: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;}
+button{font-family:inherit;}
+#app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;padding-top:var(--safe-t);}
+
+/* HEADER */
+.topbar{
+  padding:22px 20px 10px;
+  display:flex;align-items:baseline;justify-content:space-between;
+}
+.topbar .logo{font-family:Georgia,serif;font-size:26px;letter-spacing:0.5px;font-weight:600;}
+.topbar .logo span{color:var(--menstrual);}
+.topbar .date{font-size:12px;color:var(--text-dim);text-transform:capitalize;}
+
+/* TABS CONTENT */
+.view{display:none;padding:6px 18px 100px;flex:1;animation:fadein .25s ease;}
+.view.active{display:block;}
+@keyframes fadein{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+/* CARD */
+.card{
+  background:linear-gradient(180deg, var(--card-hi), var(--card));
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:18px;
+  margin-bottom:14px;
+  box-shadow:0 4px 18px rgba(120,100,70,0.08);
+}
+.card h3{margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-dim);font-weight:600;}
+
+/* RING */
+.ring-wrap{display:flex;flex-direction:column;align-items:center;padding:14px 0 6px;}
+.ring-container{position:relative;width:230px;height:230px;margin:0 auto;}
+.ring-container svg{position:absolute;top:0;left:0;display:block;}
+.ring-center{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:150px;text-align:center;pointer-events:none;
+}
+.ring-center-label{font-size:11px;color:var(--text-dim);letter-spacing:0.5px;margin-top:2px;}
+.ring-center-day{font-family:Georgia,serif;font-size:38px;font-weight:700;line-height:1;}
+.ring-center-phase{font-size:14px;margin-top:6px;font-weight:600;line-height:1.25;}
+.ring-legend{display:flex;flex-wrap:wrap;gap:10px 16px;justify-content:center;margin-top:16px;font-size:12px;color:var(--text-dim);}
+.ring-legend span{display:inline-flex;align-items:center;gap:6px;}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;}
+
+.pill-row{display:flex;gap:10px;margin-top:14px;}
+.pill{
+  flex:1;background:rgba(62,50,38,0.04);border:1px solid var(--line);
+  border-radius:14px;padding:12px 10px;text-align:center;
+}
+.pill .n{font-family:Georgia,serif;font-size:20px;font-weight:700;}
+.pill .sub{font-size:10.5px;color:var(--text-faint);margin-top:1px;min-height:13px;}
+.pill .l{font-size:11px;color:var(--text-dim);margin-top:2px;}
+.pill-accent{background:rgba(196,104,90,0.10);border-color:rgba(196,104,90,0.35);}
+.pill-accent .n{color:var(--menstrual);}
+
+/* INSIGHT */
+.insight-tag{
+  display:inline-block;font-size:11px;padding:4px 10px;border-radius:20px;
+  text-transform:uppercase;letter-spacing:0.6px;font-weight:700;margin-bottom:10px;
+}
+.insight-text{font-size:15px;line-height:1.55;color:var(--text);}
+
+/* BUTTONS */
+.btn{
+  border:none;border-radius:14px;padding:14px 16px;font-size:14.5px;font-weight:700;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.btn-primary{background:var(--menstrual);color:var(--text-onaccent);}
+.btn-secondary{background:rgba(62,50,38,0.06);color:var(--text);border:1px solid var(--line);}
+.btn-block{width:100%;}
+.btn-row{display:flex;gap:10px;margin-top:4px;}
+
+/* CHIPS */
+.chip-grid{display:flex;flex-wrap:wrap;gap:8px;}
+.chip{
+  padding:9px 14px;border-radius:20px;border:1px solid var(--line);
+  background:rgba(62,50,38,0.03);color:var(--text-dim);font-size:13px;cursor:pointer;user-select:none;
+}
+.chip.sel{background:var(--menstrual);border-color:var(--menstrual);color:var(--text-onaccent);font-weight:700;}
+
+/* MOOD */
+.mood-row{display:flex;justify-content:space-between;gap:6px;}
+.mood-btn{
+  flex:1;font-size:26px;background:rgba(62,50,38,0.03);border:1px solid var(--line);
+  border-radius:14px;padding:10px 0;cursor:pointer;opacity:0.55;
+}
+.mood-btn.sel{opacity:1;background:rgba(196,104,90,0.18);border-color:var(--menstrual);}
+
+textarea, input[type=date], input[type=number]{
+  width:100%;background:#FFFFFF;border:1px solid var(--line);color:var(--text);
+  border-radius:12px;padding:12px;font-size:14px;font-family:inherit;
+}
+textarea{min-height:80px;resize:vertical;}
+label.field-label{font-size:12px;color:var(--text-dim);display:block;margin:14px 0 6px;text-transform:uppercase;letter-spacing:0.6px;}
+
+/* CALENDAR */
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.cal-head .nav-btn{background:none;border:none;color:var(--text);font-size:20px;padding:6px 12px;cursor:pointer;}
+.cal-head .month-label{font-family:Georgia,serif;font-size:17px;font-weight:700;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+.cal-dow{text-align:center;font-size:10px;color:var(--text-faint);padding-bottom:4px;text-transform:uppercase;}
+.cal-day{
+  aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  border-radius:12px;font-size:13px;position:relative;cursor:pointer;color:var(--text);
+}
+.cal-day.pad{visibility:hidden;}
+.cal-day .num{position:relative;z-index:2;}
+.cal-day.today{box-shadow:inset 0 0 0 2px var(--text);}
+.cal-day.p-actual{background:var(--menstrual);color:var(--text-onaccent);font-weight:700;}
+.cal-day.p-predicted{background:rgba(196,104,90,0.22);color:var(--menstrual);border:1px dashed var(--menstrual);}
+.cal-day.fertile{background:rgba(126,156,116,0.22);color:var(--follicular);}
+.cal-day.ovu{background:rgba(206,154,62,0.28);color:var(--ovulation);font-weight:700;border:1px solid var(--ovulation);}
+.cal-day .logdot{position:absolute;bottom:4px;width:4px;height:4px;border-radius:50%;background:var(--text);}
+.legend-strip{display:flex;flex-wrap:wrap;gap:10px 14px;margin-top:14px;font-size:11px;color:var(--text-dim);}
+.legend-strip span{display:flex;align-items:center;gap:5px;}
+.legend-strip .box{width:10px;height:10px;border-radius:4px;}
+
+/* HISTORY */
+.hist-item{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--line);}
+.hist-item:last-child{border-bottom:none;}
+.hist-item .dates{font-size:14px;font-weight:600;}
+.hist-item .len{font-size:12px;color:var(--text-dim);}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.stat-box{background:rgba(62,50,38,0.04);border:1px solid var(--line);border-radius:14px;padding:14px;text-align:center;}
+.stat-box .n{font-family:Georgia,serif;font-size:24px;font-weight:700;}
+.stat-box .l{font-size:11px;color:var(--text-dim);margin-top:4px;}
+.log-mini{padding:10px 0;border-bottom:1px solid var(--line);}
+.log-mini:last-child{border-bottom:none;}
+.log-mini .d{font-size:13px;font-weight:700;}
+.log-mini .s{font-size:12px;color:var(--text-dim);margin-top:3px;}
+
+/* SETTINGS */
+.setting-row{display:flex;align-items:center;justify-content:between;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--line);}
+.setting-row:last-child{border-bottom:none;}
+.setting-row .lbl{font-size:14px;}
+.setting-row .sub{font-size:11px;color:var(--text-dim);margin-top:2px;}
+.stepper{display:flex;align-items:center;gap:10px;}
+.stepper button{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:rgba(62,50,38,0.05);color:var(--text);font-size:16px;cursor:pointer;}
+.stepper .val{min-width:26px;text-align:center;font-weight:700;}
+
+/* NAV BAR */
+.tabbar{
+  position:fixed;bottom:0;left:0;right:0;
+  max-width:480px;margin:0 auto;
+  background:rgba(251,246,236,0.92);backdrop-filter:blur(14px);
+  border-top:1px solid var(--line);
+  display:flex;padding:8px 6px calc(8px + var(--safe-b));
+  z-index:40;
+}
+.tab-btn{
+  flex:1;background:none;border:none;color:var(--text-faint);
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:6px 0;font-size:10.5px;cursor:pointer;
+}
+.tab-btn svg{width:22px;height:22px;}
+.tab-btn.active{color:var(--menstrual);}
+
+/* MODAL */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(62,50,38,0.35);backdrop-filter:blur(3px);
+  display:flex;align-items:flex-end;justify-content:center;z-index:100;
+}
+.modal-overlay.hidden{display:none;}
+.modal{
+  background:var(--surface);border:1px solid var(--line);
+  border-radius:24px 24px 0 0;padding:24px 20px calc(24px + var(--safe-b));
+  width:100%;max-width:480px;max-height:88vh;overflow-y:auto;
+}
+.modal h2{font-family:Georgia,serif;margin:0 0 4px;font-size:22px;}
+.modal p.desc{color:var(--text-dim);font-size:13px;margin:0 0 18px;line-height:1.5;}
+.toast{
+  position:fixed;bottom:calc(90px + var(--safe-b));left:50%;transform:translateX(-50%);
+  background:var(--text);color:var(--bg);padding:10px 18px;border-radius:30px;
+  font-size:13px;font-weight:600;z-index:200;opacity:0;pointer-events:none;transition:opacity .25s, bottom .25s;
+}
+.toast.show{opacity:1;bottom:calc(100px + var(--safe-b));}
+
+.empty-state{text-align:center;padding:30px 10px;color:var(--text-dim);font-size:13px;}
+.day-detail-close{background:none;border:none;color:var(--text-dim);font-size:22px;position:absolute;top:16px;right:18px;cursor:pointer;}
+::-webkit-scrollbar{display:none;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="topbar">
+    <div class="logo">Flow<span>Sense</span></div>
+    <div class="date" id="topbarDate"></div>
+  </div>
+
+  <!-- HOME -->
+  <div class="view active" id="view-home">
+
+    <div class="card">
+      <div class="ring-wrap">
+        <div class="ring-container">
+          <svg id="ringSvg" width="230" height="230" viewBox="0 0 230 230"></svg>
+          <div class="ring-center" id="ringCenterText"></div>
+        </div>
+      </div>
+      <div class="ring-legend">
+        <span><i class="dot" style="background:var(--menstrual)"></i>Menstruasi</span>
+        <span><i class="dot" style="background:var(--follicular)"></i>Folikular</span>
+        <span><i class="dot" style="background:var(--ovulation)"></i>Ovulasi</span>
+        <span><i class="dot" style="background:var(--luteal)"></i>Luteal</span>
+      </div>
+      <div class="pill-row">
+        <div class="pill pill-accent"><div class="n" id="pillNextPeriod">—</div><div class="sub" id="pillNextPeriodDate"></div><div class="l" id="pillNextPeriodLabel">Haid berikutnya</div></div>
+        <div class="pill"><div class="n" id="pillOvulation">—</div><div class="sub">&nbsp;</div><div class="l">Ovulasi</div></div>
+        <div class="pill"><div class="n" id="pillFertile">—</div><div class="sub">&nbsp;</div><div class="l">Masa subur</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Insight Hari Ini</h3>
+      <div id="insightTag"></div>
+      <div class="insight-text" id="insightText">—</div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary btn-block" id="btnLogPeriodToday">🩸 Mulai Menstruasi</button>
+      <button class="btn btn-secondary btn-block" id="btnGoLog">📝 Catat Gejala</button>
+    </div>
+  </div>
+
+  <!-- CALENDAR -->
+  <div class="view" id="view-calendar">
+    <div class="card">
+      <div class="cal-head">
+        <button class="nav-btn" id="calPrev">‹</button>
+        <div class="month-label" id="calMonthLabel"></div>
+        <button class="nav-btn" id="calNext">›</button>
+      </div>
+      <div class="cal-grid" id="calDow"></div>
+      <div class="cal-grid" id="calGrid" style="margin-top:4px;"></div>
+      <div class="legend-strip">
+        <span><i class="box" style="background:var(--menstrual)"></i>Haid tercatat</span>
+        <span><i class="box" style="background:rgba(196,104,90,0.22);border:1px dashed var(--menstrual)"></i>Prediksi haid</span>
+        <span><i class="box" style="background:rgba(126,156,116,0.35)"></i>Masa subur</span>
+        <span><i class="box" style="background:rgba(206,154,62,0.4)"></i>Ovulasi</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOG -->
+  <div class="view" id="view-log">
+    <div class="card">
+      <h3>Tanggal</h3>
+      <input type="date" id="logDate">
+      <button class="btn btn-secondary btn-block" style="margin-top:12px;" id="btnMarkPeriodStart">🩸 Tandai sebagai hari pertama haid</button>
+      <button class="btn btn-secondary btn-block" style="margin-top:8px;" id="btnMarkPeriodEnd">✅ Tandai sebagai hari terakhir haid</button>
+    </div>
+
+    <div class="card">
+      <h3>Gejala</h3>
+      <div class="chip-grid" id="symptomChips"></div>
+    </div>
+
+    <div class="card">
+      <h3>Suasana Hati</h3>
+      <div class="mood-row" id="moodRow"></div>
+    </div>
+
+    <div class="card">
+      <h3>Catatan</h3>
+      <textarea id="logNotes" placeholder="Tulis catatan tambahan (opsional)..."></textarea>
+    </div>
+
+    <button class="btn btn-primary btn-block" id="btnSaveLog">Simpan Catatan</button>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="view" id="view-history">
+    <div class="card">
+      <h3>Ringkasan Siklus</h3>
+      <div class="stat-grid">
+        <div class="stat-box"><div class="n" id="statAvgCycle">—</div><div class="l">Rata-rata siklus (hari)</div></div>
+        <div class="stat-box"><div class="n" id="statAvgPeriod">—</div><div class="l">Rata-rata haid (hari)</div></div>
+        <div class="stat-box"><div class="n" id="statCount">—</div><div class="l">Siklus tercatat</div></div>
+        <div class="stat-box"><div class="n" id="statRegular">—</div><div class="l">Keteraturan</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Riwayat Siklus</h3>
+      <div id="cycleHistoryList"></div>
+    </div>
+    <div class="card">
+      <h3>Catatan Gejala Terbaru</h3>
+      <div id="symptomHistoryList"></div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="view" id="view-settings">
+    <div class="card">
+      <h3>Pengaturan Siklus</h3>
+      <div class="setting-row">
+        <div><div class="lbl">Panjang siklus rata-rata</div><div class="sub">Dipakai jika data belum cukup</div></div>
+        <div class="stepper">
+          <button data-target="avgCycleLength" data-dir="-1">−</button>
+          <span class="val" id="valCycleLen">28</span>
+          <button data-target="avgCycleLength" data-dir="1">+</button>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div><div class="lbl">Lama menstruasi rata-rata</div><div class="sub">Dalam hari</div></div>
+        <div class="stepper">
+          <button data-target="avgPeriodLength" data-dir="-1">−</button>
+          <span class="val" id="valPeriodLen">5</span>
+          <button data-target="avgPeriodLength" data-dir="1">+</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Backup & Restore</h3>
+      <div class="insight-text" style="color:var(--text-dim);font-size:12.5px;margin-bottom:12px;">
+        Cadangkan datamu sebagai file JSON, atau pulihkan dari file backup sebelumnya.
+      </div>
+      <button class="btn btn-secondary btn-block" id="btnExport">⬇️ Backup data (Ekspor JSON)</button>
+      <button class="btn btn-secondary btn-block" style="margin-top:10px;" id="btnImport">⬆️ Restore data (Impor JSON)</button>
+      <input type="file" id="fileImport" accept="application/json,.json" style="display:none;">
+      <button class="btn btn-secondary btn-block" style="margin-top:10px;color:var(--menstrual);" id="btnClearData">🗑️ Hapus semua data</button>
+    </div>
+
+    <div class="card">
+      <h3>Tentang</h3>
+      <div class="insight-text" style="color:var(--text-dim);font-size:13px;">
+        FlowSense membantu memprediksi menstruasi, ovulasi, dan masa subur berdasarkan data yang kamu catat sendiri.
+        Prediksi bersifat estimasi dan tidak menggantikan konsultasi medis atau digunakan sebagai satu-satunya metode kontrasepsi.
+      </div>
+    </div>
+  </div>
+
+  <div class="tabbar">
+    <button class="tab-btn active" data-view="home">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.2" fill="currentColor" stroke="none"/></svg>
+      Beranda
+    </button>
+    <button class="tab-btn" data-view="calendar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+      Kalender
+    </button>
+    <button class="tab-btn" data-view="log">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+      Catat
+    </button>
+    <button class="tab-btn" data-view="history">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5M12 7v5l4 2"/></svg>
+      Riwayat
+    </button>
+    <button class="tab-btn" data-view="settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+      Atur
+    </button>
+  </div>
+</div>
+
+<!-- ONBOARDING MODAL -->
+<div class="modal-overlay" id="onboardModal">
+  <div class="modal">
+    <h2 class="serif">Selamat datang 🌙</h2>
+    <p class="desc">Isi data awal supaya FlowSense bisa mulai memprediksi menstruasi, ovulasi, dan masa suburmu.</p>
+    <label class="field-label">Kapan hari pertama haid terakhirmu?</label>
+    <input type="date" id="onbLastPeriod">
+    <label class="field-label">Rata-rata panjang siklus (hari)</label>
+    <input type="number" id="onbCycleLen" value="28" min="15" max="45">
+    <label class="field-label">Rata-rata lama haid (hari)</label>
+    <input type="number" id="onbPeriodLen" value="5" min="1" max="12">
+    <button class="btn btn-primary btn-block" style="margin-top:20px;" id="btnOnboardSave">Mulai Tracking</button>
+  </div>
+</div>
+
+<!-- DAY DETAIL MODAL -->
+<div class="modal-overlay hidden" id="dayModal">
+  <div class="modal" style="position:relative;">
+    <button class="day-detail-close" id="dayModalClose">✕</button>
+    <h2 class="serif" id="dayModalDate">—</h2>
+    <p class="desc" id="dayModalPhase">—</p>
+    <div id="dayModalLog"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------- STORAGE ---------- */
+const STORE_KEY = 'siklus_data_v1';
+function loadData(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  return {onboarded:false, settings:{avgCycleLength:28, avgPeriodLength:5, lutealLength:14}, cycles:[], logs:{}};
+}
+function saveData(){ localStorage.setItem(STORE_KEY, JSON.stringify(DATA)); }
+let DATA = loadData();
+
+/* ---------- DATE HELPERS ---------- */
+function pad(n){return n.toString().padStart(2,'0');}
+function toISO(d){return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;}
+function parseISO(s){const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d);}
+function addDays(dateOrStr, n){const d = typeof dateOrStr==='string'?parseISO(dateOrStr):new Date(dateOrStr); d.setDate(d.getDate()+n); return d;}
+function daysBetween(a,b){const A= typeof a==='string'?parseISO(a):a; const B= typeof b==='string'?parseISO(b):b; return Math.round((B-A)/86400000);}
+function todayISO(){return toISO(new Date());}
+const BULAN = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+const HARI = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+const HARI_SINGKAT = ['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
+
+/* ---------- CYCLE MATH ---------- */
+function sortedCycles(){ return [...DATA.cycles].sort((a,b)=> a.start < b.start ? -1 : 1); }
+
+function computeAvgCycleLength(){
+  const cs = sortedCycles();
+  if(cs.length<2) return DATA.settings.avgCycleLength;
+  const recent = cs.slice(-7);
+  let lens=[];
+  for(let i=1;i<recent.length;i++){ lens.push(daysBetween(recent[i-1].start, recent[i].start)); }
+  lens = lens.filter(l=>l>=15 && l<=60);
+  if(!lens.length) return DATA.settings.avgCycleLength;
+  return Math.round(lens.reduce((a,b)=>a+b,0)/lens.length);
+}
+function computeAvgPeriodLength(){
+  const completed = DATA.cycles.filter(c=>c.end);
+  if(!completed.length) return DATA.settings.avgPeriodLength;
+  const lens = completed.slice(-7).map(c=>daysBetween(c.start,c.end)+1).filter(l=>l>0 && l<=14);
+  if(!lens.length) return DATA.settings.avgPeriodLength;
+  return Math.round(lens.reduce((a,b)=>a+b,0)/lens.length);
+}
+function computeRegularity(){
+  const cs = sortedCycles();
+  if(cs.length<3) return null;
+  const recent = cs.slice(-7);
+  let lens=[];
+  for(let i=1;i<recent.length;i++){ lens.push(daysBetween(recent[i-1].start, recent[i].start)); }
+  lens = lens.filter(l=>l>=15 && l<=60);
+  if(lens.length<2) return null;
+  const avg = lens.reduce((a,b)=>a+b,0)/lens.length;
+  const variance = lens.reduce((a,b)=>a+Math.pow(b-avg,2),0)/lens.length;
+  const sd = Math.sqrt(variance);
+  if(sd<=2) return 'Teratur';
+  if(sd<=5) return 'Cukup teratur';
+  return 'Bervariasi';
+}
+function getLastCycleStart(){
+  const cs = sortedCycles();
+  const today = todayISO();
+  const past = cs.filter(c=>c.start<=today);
+  if(past.length) return past[past.length-1].start;
+  if(cs.length) return cs[0].start;
+  return null;
+}
+function getCycleParams(){
+  const avgCycleLength = computeAvgCycleLength();
+  const avgPeriodLength = computeAvgPeriodLength();
+  const luteal = DATA.settings.lutealLength || 14;
+  let ovulationDay = avgCycleLength - luteal;
+  if(ovulationDay<8) ovulationDay = 8;
+  if(ovulationDay>avgCycleLength-2) ovulationDay = avgCycleLength-2;
+  const fertileStart = Math.max(1, ovulationDay-5);
+  const fertileEnd = Math.min(avgCycleLength, ovulationDay+1);
+  return {avgCycleLength, avgPeriodLength, ovulationDay, fertileStart, fertileEnd};
+}
+function classifyCycleDay(cycleDay, params){
+  const {avgPeriodLength, fertileStart, fertileEnd, ovulationDay} = params;
+  if(cycleDay<=avgPeriodLength) return 'menstrual';
+  if(cycleDay===ovulationDay) return 'ovulation';
+  if(cycleDay>=fertileStart && cycleDay<=fertileEnd) return 'fertile';
+  if(cycleDay<fertileStart) return 'follicular';
+  return 'luteal';
+}
+function isDateInLoggedPeriod(dateStr){
+  for(const c of DATA.cycles){
+    const end = c.end || toISO(addDays(c.start, computeAvgPeriodLength()-1));
+    if(dateStr>=c.start && dateStr<=end) return true;
+  }
+  return false;
+}
+function classifyDate(dateStr){
+  const params = getCycleParams();
+  if(isDateInLoggedPeriod(dateStr)) return {type:'p-actual', cycleDay:null, params};
+  const cs = sortedCycles();
+  const starts = cs.map(c=>c.start);
+  // add projected future starts
+  const lastStart = getLastCycleStart();
+  if(lastStart){
+    let s = lastStart;
+    for(let i=0;i<8;i++){
+      s = toISO(addDays(s, params.avgCycleLength));
+      starts.push(s);
+    }
+  }
+  // find nearest start <= dateStr
+  const candidates = starts.filter(s=>s<=dateStr).sort();
+  if(!candidates.length) return {type:'none', cycleDay:null, params};
+  const nearest = candidates[candidates.length-1];
+  const cycleDay = daysBetween(nearest, dateStr)+1;
+  if(cycleDay>params.avgCycleLength+7) return {type:'none', cycleDay, params};
+  const isActualStart = DATA.cycles.some(c=>c.start===nearest);
+  const kind = classifyCycleDay(cycleDay, params);
+  if(kind==='menstrual') return {type: isActualStart? 'p-actual':'p-predicted', cycleDay, params};
+  if(kind==='fertile') return {type:'fertile', cycleDay, params};
+  if(kind==='ovulation') return {type:'ovu', cycleDay, params};
+  return {type: kind, cycleDay, params};
+}
+
+/* ---------- INSIGHTS ---------- */
+const TIPS = {
+  menstrual:[
+    "Tubuhmu sedang bekerja keras — istirahat cukup dan minum air hangat bisa membantu meredakan kram.",
+    "Konsumsi makanan kaya zat besi seperti bayam, kacang-kacangan, atau daging merah untuk mengganti darah yang hilang.",
+    "Olahraga ringan seperti peregangan atau jalan santai bisa membantu meredakan nyeri haid.",
+    "Wajar merasa lebih lelah dari biasanya di fase ini — dengarkan tubuhmu dan jangan memaksakan diri.",
+    "Kompres hangat di perut bagian bawah bisa membantu meredakan kram menstruasi."
+  ],
+  follicular:[
+    "Energi biasanya mulai meningkat di fase ini — waktu yang bagus untuk olahraga yang lebih intens.",
+    "Estrogen sedang naik, cocok untuk memulai proyek baru atau aktivitas yang butuh fokus tinggi.",
+    "Perbanyak protein dan sayuran segar untuk mendukung perkembangan folikel yang sehat.",
+    "Kulit biasanya terlihat lebih cerah di fase ini — manfaatkan untuk rutinitas perawatanmu."
+  ],
+  fertile:[
+    "Kamu memasuki masa subur — peluang hamil meningkat jika sedang merencanakan kehamilan.",
+    "Jika sedang menghindari kehamilan, ini periode paling penting untuk konsisten memakai kontrasepsi.",
+    "Lendir serviks biasanya lebih licin dan bening menjelang ovulasi, ini tanda kesuburan alami.",
+    "Gairah dan energi sosial sering kali meningkat menjelang masa ovulasi."
+  ],
+  ovulation:[
+    "Hari ini diperkirakan puncak ovulasimu — masa paling subur dalam siklus ini.",
+    "Sebagian orang merasakan nyeri ringan di satu sisi perut bawah saat ovulasi (mittelschmerz), ini normal.",
+    "Suhu basal tubuh biasanya sedikit naik setelah ovulasi terjadi.",
+    "Jika sedang program hamil, ini waktu ideal untuk berhubungan."
+  ],
+  luteal:[
+    "Progesteron meningkat di fase ini — gejala PMS seperti kembung atau mood swing bisa mulai muncul.",
+    "Kurangi kafein dan asupan garam untuk membantu mengurangi kembung menjelang menstruasi.",
+    "Mood lebih sensitif itu wajar di fase luteal, beri dirimu ruang untuk istirahat lebih.",
+    "Tidur cukup dan asupan magnesium bisa membantu meredakan gejala PMS.",
+    "Craving makanan manis atau asin sering muncul di fase ini — dengarkan tubuhmu secukupnya."
+  ]
+};
+const PHASE_LABEL = {menstrual:'Menstruasi', follicular:'Fase Folikular', fertile:'Masa Subur', ovulation:'Hari Ovulasi', luteal:'Fase Luteal'};
+const PHASE_COLOR_VAR = {menstrual:'--menstrual', follicular:'--follicular', fertile:'--ovulation', ovulation:'--ovulation', luteal:'--luteal'};
+
+function pickTip(phaseKey, seedDate){
+  const arr = TIPS[phaseKey] || TIPS.luteal;
+  let seed = 0;
+  for(const ch of seedDate) seed += ch.charCodeAt(0);
+  return arr[seed % arr.length];
+}
+
+/* ---------- RENDER: RING ---------- */
+function polarToCartesian(cx,cy,r,angleDeg){
+  const a = (angleDeg-90) * Math.PI/180;
+  return {x: cx + r*Math.cos(a), y: cy + r*Math.sin(a)};
+}
+function describeArc(cx,cy,r,startAngle,endAngle){
+  if(endAngle-startAngle>=359.9) endAngle = startAngle+359.9;
+  const start = polarToCartesian(cx,cy,r,startAngle);
+  const end = polarToCartesian(cx,cy,r,endAngle);
+  const largeArc = endAngle-startAngle<=180 ? "0":"1";
+  return `M ${start.x} ${start.y} A ${r} ${r} 0 ${largeArc} 1 ${end.x} ${end.y}`;
+}
+function renderRing(){
+  const svg = document.getElementById('ringSvg');
+  const params = getCycleParams();
+  const lastStart = getLastCycleStart();
+  const cx=115, cy=115, r=92;
+  let cycleDay = 1;
+  if(lastStart) cycleDay = daysBetween(lastStart, todayISO())+1;
+  if(cycleDay<1) cycleDay=1;
+
+  const L = params.avgCycleLength;
+  const segs = [
+    {from:1, to:params.avgPeriodLength, color:'var(--menstrual)'},
+    {from:params.avgPeriodLength+1, to:params.fertileStart-1, color:'var(--follicular)'},
+    {from:params.fertileStart, to:params.fertileEnd, color:'var(--ovulation)'},
+    {from:params.fertileEnd+1, to:L, color:'var(--luteal)'}
+  ].filter(s=>s.to>=s.from);
+
+  let svgHtml = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="rgba(62,50,38,0.06)" stroke-width="14"/>`;
+  for(const s of segs){
+    const a1 = ((s.from-1)/L)*360;
+    const a2 = (s.to/L)*360;
+    svgHtml += `<path d="${describeArc(cx,cy,r,a1,a2)}" stroke="${s.color}" stroke-width="14" fill="none" stroke-linecap="round"/>`;
+  }
+  // today marker
+  const todayAngle = ((Math.min(cycleDay,L)-0.5)/L)*360;
+  const mp = polarToCartesian(cx,cy,r,todayAngle);
+  svgHtml += `<circle cx="${mp.x}" cy="${mp.y}" r="7" fill="var(--bg)" stroke="var(--text)" stroke-width="2.5"/>`;
+  svg.innerHTML = svgHtml;
+
+  // center text
+  const centerEl = document.getElementById('ringCenterText');
+  const kind = lastStart ? classifyCycleDay(Math.min(cycleDay,L), params) : 'menstrual';
+  centerEl.innerHTML = `
+    <div class="ring-center-day serif">${lastStart? cycleDay : '—'}</div>
+    <div class="ring-center-label">Hari siklus ke-</div>
+    <div class="ring-center-phase" style="color:var(${PHASE_COLOR_VAR[kind]})">${lastStart? PHASE_LABEL[kind] : 'Belum ada data'}</div>
+  `;
+
+  // pills
+  if(lastStart){
+    const nextPeriod = addDays(lastStart, params.avgCycleLength);
+    const nextOvu = addDays(lastStart, params.ovulationDay-1);
+    const fertS = addDays(lastStart, params.fertileStart-1);
+    const fertE = addDays(lastStart, params.fertileEnd-1);
+    document.getElementById('pillNextPeriod').textContent = formatHCountdown(toISO(nextPeriod));
+    document.getElementById('pillNextPeriodDate').textContent = fmtShort(toISO(nextPeriod));
+    const diffToNext = daysBetween(todayISO(), toISO(nextPeriod));
+    document.getElementById('pillNextPeriodLabel').textContent = diffToNext<0 ? 'Prediksi terlambat' : 'Haid berikutnya';
+    document.getElementById('pillOvulation').textContent = fmtShort(toISO(nextOvu));
+    document.getElementById('pillFertile').textContent = `${fmtShort(toISO(fertS))}–${fmtShort(toISO(fertE))}`;
+  } else {
+    document.getElementById('pillNextPeriod').textContent='—';
+    document.getElementById('pillNextPeriodDate').textContent='';
+    document.getElementById('pillOvulation').textContent='—';
+    document.getElementById('pillFertile').textContent='—';
+  }
+
+  // insight
+  const tagEl = document.getElementById('insightTag');
+  const textEl = document.getElementById('insightText');
+  if(lastStart){
+    const phaseKey = kind==='ovulation' ? 'ovulation' : kind;
+    tagEl.innerHTML = `<span class="insight-tag" style="background:rgba(62,50,38,0.08);color:var(${PHASE_COLOR_VAR[kind]})">${PHASE_LABEL[kind]} · Hari ke-${cycleDay}</span>`;
+    textEl.textContent = pickTip(phaseKey, todayISO());
+  } else {
+    tagEl.innerHTML = '';
+    textEl.textContent = 'Catat hari pertama haid terakhirmu untuk mulai melihat prediksi dan insight harian.';
+  }
+}
+function fmtShort(iso){
+  const d = parseISO(iso);
+  return `${d.getDate()} ${BULAN[d.getMonth()].slice(0,3)}`;
+}
+function formatHCountdown(targetIso){
+  const diff = daysBetween(todayISO(), targetIso);
+  if(diff===0) return 'H';
+  if(diff>0) return `H-${diff}`;
+  return `H+${Math.abs(diff)}`;
+}
+
+/* ---------- CALENDAR ---------- */
+let calCursor = new Date();
+function renderCalendar(){
+  const y = calCursor.getFullYear(), m = calCursor.getMonth();
+  document.getElementById('calMonthLabel').textContent = `${BULAN[m]} ${y}`;
+  const dowEl = document.getElementById('calDow');
+  dowEl.innerHTML = HARI_SINGKAT.map(h=>`<div class="cal-dow">${h}</div>`).join('');
+
+  const firstDay = new Date(y,m,1);
+  const startPad = firstDay.getDay();
+  const daysInMonth = new Date(y,m+1,0).getDate();
+  const grid = document.getElementById('calGrid');
+  let html='';
+  for(let i=0;i<startPad;i++) html += `<div class="cal-day pad"></div>`;
+  const today = todayISO();
+  for(let d=1; d<=daysInMonth; d++){
+    const dateObj = new Date(y,m,d);
+    const iso = toISO(dateObj);
+    const cls = classifyDate(iso);
+    let extra = '';
+    if(cls.type==='p-actual') extra='p-actual';
+    else if(cls.type==='p-predicted') extra='p-predicted';
+    else if(cls.type==='fertile') extra='fertile';
+    else if(cls.type==='ovu') extra='ovu';
+    const isToday = iso===today ? 'today':'';
+    const hasLog = DATA.logs[iso] ? `<span class="logdot"></span>` : '';
+    html += `<div class="cal-day ${extra} ${isToday}" data-date="${iso}"><span class="num">${d}</span>${hasLog}</div>`;
+  }
+  grid.innerHTML = html;
+  grid.querySelectorAll('.cal-day:not(.pad)').forEach(el=>{
+    el.addEventListener('click', ()=> openDayModal(el.dataset.date));
+  });
+}
+document.getElementById('calPrev').addEventListener('click', ()=>{ calCursor.setMonth(calCursor.getMonth()-1); renderCalendar(); });
+document.getElementById('calNext').addEventListener('click', ()=>{ calCursor.setMonth(calCursor.getMonth()+1); renderCalendar(); });
+
+function openDayModal(iso){
+  const cls = classifyDate(iso);
+  const d = parseISO(iso);
+  document.getElementById('dayModalDate').textContent = `${d.getDate()} ${BULAN[d.getMonth()]} ${d.getFullYear()}`;
+  let phaseText = 'Tidak ada data siklus untuk tanggal ini.';
+  if(cls.type==='p-actual') phaseText='Hari menstruasi (tercatat)';
+  else if(cls.type==='p-predicted') phaseText='Prediksi hari menstruasi';
+  else if(cls.type==='fertile') phaseText='Masa subur';
+  else if(cls.type==='ovu') phaseText='Perkiraan hari ovulasi';
+  else if(cls.type==='follicular') phaseText='Fase folikular';
+  else if(cls.type==='luteal') phaseText='Fase luteal';
+  document.getElementById('dayModalPhase').textContent = phaseText;
+
+  const log = DATA.logs[iso];
+  const logEl = document.getElementById('dayModalLog');
+  if(log){
+    logEl.innerHTML = `
+      ${log.mood ? `<div style="font-size:28px;margin-bottom:8px;">${log.mood}</div>`:''}
+      ${log.symptoms && log.symptoms.length ? `<div class="chip-grid" style="margin-bottom:10px;">${log.symptoms.map(s=>`<span class="chip sel" style="cursor:default;">${s}</span>`).join('')}</div>`:''}
+      ${log.notes ? `<div class="insight-text" style="color:var(--text-dim);">${escapeHtml(log.notes)}</div>`:''}
+    `;
+  } else {
+    logEl.innerHTML = `<div class="empty-state">Belum ada catatan gejala untuk tanggal ini.</div>`;
+  }
+  document.getElementById('dayModal').classList.remove('hidden');
+}
+document.getElementById('dayModalClose').addEventListener('click', ()=> document.getElementById('dayModal').classList.add('hidden'));
+document.getElementById('dayModal').addEventListener('click', (e)=>{ if(e.target.id==='dayModal') e.currentTarget.classList.add('hidden'); });
+
+function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+/* ---------- LOG VIEW ---------- */
+const SYMPTOMS = ['Kram Perut','Mood Swing','Kembung','Sakit Kepala','Jerawat','Lelah','Nyeri Payudara','Ngidam','Sulit Tidur','Sakit Punggung','Mual','Sembelit/Diare'];
+const MOODS = ['😄','😊','😐','😔','😣'];
+let selectedSymptoms = new Set();
+let selectedMood = null;
+
+function renderLogChips(){
+  const el = document.getElementById('symptomChips');
+  el.innerHTML = SYMPTOMS.map(s=>`<div class="chip ${selectedSymptoms.has(s)?'sel':''}" data-s="${s}">${s}</div>`).join('');
+  el.querySelectorAll('.chip').forEach(c=>{
+    c.addEventListener('click', ()=>{
+      const s = c.dataset.s;
+      if(selectedSymptoms.has(s)) selectedSymptoms.delete(s); else selectedSymptoms.add(s);
+      renderLogChips();
+    });
+  });
+}
+function renderMoodRow(){
+  const el = document.getElementById('moodRow');
+  el.innerHTML = MOODS.map(m=>`<div class="mood-btn ${selectedMood===m?'sel':''}" data-m="${m}">${m}</div>`).join('');
+  el.querySelectorAll('.mood-btn').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      selectedMood = selectedMood===b.dataset.m ? null : b.dataset.m;
+      renderMoodRow();
+    });
+  });
+}
+function loadLogForDate(iso){
+  const log = DATA.logs[iso];
+  selectedSymptoms = new Set(log?.symptoms || []);
+  selectedMood = log?.mood || null;
+  document.getElementById('logNotes').value = log?.notes || '';
+  renderLogChips();
+  renderMoodRow();
+}
+document.getElementById('logDate').addEventListener('change', (e)=> loadLogForDate(e.target.value));
+
+document.getElementById('btnSaveLog').addEventListener('click', ()=>{
+  const iso = document.getElementById('logDate').value || todayISO();
+  DATA.logs[iso] = {
+    symptoms: Array.from(selectedSymptoms),
+    mood: selectedMood,
+    notes: document.getElementById('logNotes').value.trim()
+  };
+  saveData();
+  showToast('Catatan disimpan ✓');
+  renderAll();
+});
+document.getElementById('btnMarkPeriodStart').addEventListener('click', ()=>{
+  const iso = document.getElementById('logDate').value || todayISO();
+  addPeriodStart(iso);
+  showToast('Hari pertama haid dicatat 🩸');
+  renderAll();
+});
+document.getElementById('btnMarkPeriodEnd').addEventListener('click', ()=>{
+  const iso = document.getElementById('logDate').value || todayISO();
+  markPeriodEnd(iso);
+  showToast('Hari terakhir haid dicatat ✓');
+  renderAll();
+});
+document.getElementById('btnLogPeriodToday').addEventListener('click', ()=>{
+  addPeriodStart(todayISO());
+  showToast('Hari pertama haid dicatat 🩸');
+  renderAll();
+});
+document.getElementById('btnGoLog').addEventListener('click', ()=> switchTab('log'));
+
+function addPeriodStart(iso){
+  const exists = DATA.cycles.find(c=>c.start===iso);
+  if(!exists) DATA.cycles.push({start: iso, end: null});
+  DATA.cycles.sort((a,b)=> a.start<b.start?-1:1);
+  saveData();
+}
+function markPeriodEnd(iso){
+  const cs = sortedCycles().filter(c=>c.start<=iso);
+  if(!cs.length){ addPeriodStart(iso); return; }
+  const last = cs[cs.length-1];
+  const target = DATA.cycles.find(c=>c.start===last.start);
+  target.end = iso;
+  saveData();
+}
+
+/* ---------- HISTORY VIEW ---------- */
+function renderHistory(){
+  document.getElementById('statAvgCycle').textContent = computeAvgCycleLength();
+  document.getElementById('statAvgPeriod').textContent = computeAvgPeriodLength();
+  document.getElementById('statCount').textContent = DATA.cycles.length;
+  document.getElementById('statRegular').textContent = computeRegularity() || '—';
+
+  const cs = sortedCycles().slice().reverse();
+  const listEl = document.getElementById('cycleHistoryList');
+  if(!cs.length){
+    listEl.innerHTML = `<div class="empty-state">Belum ada siklus tercatat. Mulai catat di tab "Catat".</div>`;
+  } else {
+    listEl.innerHTML = cs.map(c=>{
+      const len = c.end ? daysBetween(c.start,c.end)+1 : null;
+      return `<div class="hist-item">
+        <div>
+          <div class="dates">${fmtShort(c.start)}${c.end? ' – '+fmtShort(c.end):''}</div>
+          <div class="len">${len? len+' hari haid' : 'Sedang berlangsung'}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  const logDates = Object.keys(DATA.logs).sort().reverse().slice(0,10);
+  const symEl = document.getElementById('symptomHistoryList');
+  if(!logDates.length){
+    symEl.innerHTML = `<div class="empty-state">Belum ada catatan gejala.</div>`;
+  } else {
+    symEl.innerHTML = logDates.map(iso=>{
+      const log = DATA.logs[iso];
+      const parts = [];
+      if(log.mood) parts.push(log.mood);
+      if(log.symptoms && log.symptoms.length) parts.push(log.symptoms.join(', '));
+      return `<div class="log-mini"><div class="d">${fmtShort(iso)}</div><div class="s">${parts.join(' · ') || 'Tidak ada gejala dicatat'}</div></div>`;
+    }).join('');
+  }
+}
+
+/* ---------- SETTINGS ---------- */
+function renderSettings(){
+  document.getElementById('valCycleLen').textContent = DATA.settings.avgCycleLength;
+  document.getElementById('valPeriodLen').textContent = DATA.settings.avgPeriodLength;
+}
+document.querySelectorAll('.stepper button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    const target = b.dataset.target;
+    const dir = parseInt(b.dataset.dir);
+    let val = DATA.settings[target] + dir;
+    if(target==='avgCycleLength') val = Math.min(45, Math.max(15, val));
+    if(target==='avgPeriodLength') val = Math.min(12, Math.max(1, val));
+    DATA.settings[target] = val;
+    saveData();
+    renderSettings();
+    renderAll();
+  });
+});
+document.getElementById('btnExport').addEventListener('click', ()=>{
+  const blob = new Blob([JSON.stringify(DATA,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download='siklus-data.json'; a.click();
+  URL.revokeObjectURL(url);
+});
+document.getElementById('btnImport').addEventListener('click', ()=>{
+  document.getElementById('fileImport').click();
+});
+document.getElementById('fileImport').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev)=>{
+    let parsed;
+    try{
+      parsed = JSON.parse(ev.target.result);
+    }catch(err){
+      alert('File tidak valid. Pastikan kamu memilih file JSON hasil backup dari FlowSense.');
+      e.target.value='';
+      return;
+    }
+    const looksValid = parsed && typeof parsed==='object' &&
+      Array.isArray(parsed.cycles) && typeof parsed.logs==='object' && typeof parsed.settings==='object';
+    if(!looksValid){
+      alert('Struktur file tidak sesuai format backup FlowSense.');
+      e.target.value='';
+      return;
+    }
+    const cycleCount = parsed.cycles.length;
+    const logCount = Object.keys(parsed.logs||{}).length;
+    const ok = confirm(`Pulihkan data ini?\n\n${cycleCount} siklus, ${logCount} catatan gejala.\n\nData yang tersimpan saat ini akan digantikan sepenuhnya dan tidak bisa dikembalikan.`);
+    if(!ok){ e.target.value=''; return; }
+    DATA = {
+      onboarded: true,
+      settings: Object.assign({avgCycleLength:28, avgPeriodLength:5, lutealLength:14}, parsed.settings||{}),
+      cycles: parsed.cycles || [],
+      logs: parsed.logs || {}
+    };
+    saveData();
+    document.getElementById('onboardModal').classList.add('hidden');
+    e.target.value='';
+    showToast('Data berhasil dipulihkan ✓');
+    renderAll();
+    renderSettings();
+  };
+  reader.readAsText(file);
+});
+document.getElementById('btnClearData').addEventListener('click', ()=>{
+  if(confirm('Yakin hapus semua data siklus dan catatan? Tindakan ini tidak bisa dibatalkan.')){
+    localStorage.removeItem(STORE_KEY);
+    DATA = {onboarded:false, settings:{avgCycleLength:28, avgPeriodLength:5, lutealLength:14}, cycles:[], logs:{}};
+    saveData();
+    document.getElementById('onboardModal').classList.remove('hidden');
+    renderAll();
+  }
+});
+
+/* ---------- TABS ---------- */
+function switchTab(name){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.view===name));
+  if(name==='calendar') renderCalendar();
+  if(name==='log'){ document.getElementById('logDate').value = todayISO(); loadLogForDate(todayISO()); }
+  if(name==='history') renderHistory();
+  if(name==='settings') renderSettings();
+  window.scrollTo(0,0);
+}
+document.querySelectorAll('.tab-btn').forEach(b=> b.addEventListener('click', ()=> switchTab(b.dataset.view)));
+
+/* ---------- ONBOARDING ---------- */
+document.getElementById('btnOnboardSave').addEventListener('click', ()=>{
+  const lp = document.getElementById('onbLastPeriod').value;
+  const cl = parseInt(document.getElementById('onbCycleLen').value) || 28;
+  const pl = parseInt(document.getElementById('onbPeriodLen').value) || 5;
+  if(!lp){ alert('Mohon isi tanggal hari pertama haid terakhirmu.'); return; }
+  DATA.settings.avgCycleLength = cl;
+  DATA.settings.avgPeriodLength = pl;
+  DATA.cycles = [{start: lp, end: null}];
+  DATA.onboarded = true;
+  saveData();
+  document.getElementById('onboardModal').classList.add('hidden');
+  renderAll();
+});
+
+/* ---------- TOAST ---------- */
+let toastTimer;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=> t.classList.remove('show'), 2200);
+}
+
+/* ---------- TOPBAR DATE ---------- */
+function renderTopbarDate(){
+  const d = new Date();
+  document.getElementById('topbarDate').textContent = `${HARI[d.getDay()]}, ${d.getDate()} ${BULAN[d.getMonth()]}`;
+}
+
+/* ---------- INIT ---------- */
+function renderAll(){
+  renderTopbarDate();
+  renderRing();
+  const activeView = document.querySelector('.view.active')?.id;
+  if(activeView==='view-calendar') renderCalendar();
+  if(activeView==='view-history') renderHistory();
+  if(activeView==='view-settings') renderSettings();
+}
+function init(){
+  document.getElementById('onbLastPeriod').max = todayISO();
+  if(!DATA.onboarded){
+    document.getElementById('onboardModal').classList.remove('hidden');
+  } else {
+    document.getElementById('onboardModal').classList.add('hidden');
+  }
+  document.getElementById('logDate').value = todayISO();
+  document.getElementById('logDate').max = todayISO();
+  loadLogForDate(todayISO());
+  renderLogChips();
+  renderMoodRow();
+  renderAll();
+
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('service_worker.js').catch(()=>{});
+  }
+}
+init();
+</script>
+</body>
+</html>
