@@ -1,0 +1,21 @@
+{
+  "name": "Siklus — Tracker Menstruasi & Kesuburan",
+  "short_name": "Siklus",
+  "description": "Aplikasi prediksi menstruasi, ovulasi, dan masa subur dengan insight kesehatan harian dan pelacakan gejala PMS.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#241220",
+  "theme_color": "#241220",
+  "lang": "id",
+  "categories": ["health", "lifestyle", "medical"],
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
